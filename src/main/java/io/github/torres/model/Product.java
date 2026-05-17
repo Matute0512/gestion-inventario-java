@@ -1,5 +1,6 @@
 package io.github.torres.model;
 
+import java.util.Objects;
 /**
  * Represents a physical product in the inventory system
  * This entity maps to the 'products' table in the database
@@ -32,6 +33,15 @@ public class Product {
      */
     private Integer stock;
     
+    /**
+     * Full constructor used when reading rows from the database.
+     * 
+     * @param id            database primary key
+     * @param name          product name
+     * @param description   product description
+     * @param price         unit price
+     * @param stock         available quantity
+     */
     public Product(Integer id, String name, String description, Double price, Integer stock) {
         this.id = id;
         this.name = name;
@@ -40,6 +50,7 @@ public class Product {
         this.stock = stock;
     }
 
+    /** No-arg constructor required by the DAO when mapping ResultSet rows. */
     public Product() {
 
     }
@@ -82,6 +93,24 @@ public class Product {
 
     public void setStock(Integer stock) {
         this.stock = stock;
+    }
+
+    @Override
+    public String toString(){
+        return "Producto {id= "+id+", name= "+name+", precio= $"+price+", stock= "+stock+"}";
+    }
+
+    @Override
+    public boolean equals(Object o){
+        if (this == o) return true;
+        if (!(o instanceof Product)) return false;
+        Product p = (Product) o;
+        return Objects.equals(id,p.id);
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hashCode(id);
     }
 
 }

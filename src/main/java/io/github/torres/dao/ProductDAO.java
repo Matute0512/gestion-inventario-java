@@ -1,30 +1,46 @@
 package io.github.torres.dao;
 
-import io.github.torres.model.Product;
-import io.github.torres.config.DatabaseConnection;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLDataException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
+import io.github.torres.config.DatabaseConnection;
+import io.github.torres.model.Product;
+
 /**
- * Data Access Object for the Product Unity.
- * Handles all CRUD (Create, Read, Update, Delete) operations white the databes.
+ * Data Access Object for the {@link Product} entity.
+ * Handles all CRUD operations against the {@code products} table using JDBC.
+ *
+ * <p>
+ * All methods propagate {@link SQLException} as a checked
+ * {@link DAOException} (unchecked wrapper) so callers (Controller) can
+ * display meaningful error dialogs without leaking JDBC types into the UI.
+ * </p>
  */
 public class ProductDAO {
+
+    // SQL constants
+    private static final String SQL_INSERT = "INSERT INTO products(name, description,price, stock) VALUES (?, ?, ?, ?)";
+
+    private static final String SQL_SELECT_ALL = "SELECT * FROM products";
+
+    private static final String SQL_DELETE = "DELETE FROM products WHERE id = ? ";
+
+    private static final String SQL_UPDATE = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?";
 
     /**
      * Inserts a new product into the database.
      * * @param product The product object containing the data to be saved.
+     * 
+     * @throws DAOException if a database error occurs.
      */
     public void save(Product product) {
-        // The SQL query with placeholders (?) to prevente SQL Injection
-        String sql = "INSERT INTO products(name, description,price, stock) VALUES (?, ?, ?, ?)";
 
         // We use try-with-resources to open the connection and prepare the statement
         try (Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(SQL_INSERT)) {
 
             // 1. Inject the actual data in the placeholders (?)
             statement.setString(1, product.getName());
@@ -37,11 +53,11 @@ public class ProductDAO {
 
             // 3. Confirm the action
             if (rowsAffected > 0) {
-                System.out.println("ÉXITO: ¡Producto guardado correctamente!");
+                System.out.println("ÉXITO: Producto guardado correctamente - " + product.getName());
             }
         } catch (SQLException e) {
-            System.err.println("ERROR: Error al guardar el producto en la base de datos. ");
-            e.printStackTrace();
+            throw new DAOException("ERROR al guardar el producto - " + product.getName(), e);
+
         }
     }
 
@@ -49,14 +65,14 @@ public class ProductDAO {
      * Retrieves all products from the database.
      * 
      * @return A list of Product objects.
+     * @throws DAOException if a database error occurs
      */
-    public java.util.List<Product> getAll() {
+    public List<Product> getAll() {
         // Create an empty list to store the products we find
-        java.util.List<Product> productList = new java.util.ArrayList<>();
-        String sql = "SELECT * FROM products";
+        List<Product> productList = new ArrayList<>();
 
         try (Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql);
+                PreparedStatement statement = connection.prepareStatement(SQL_SELECT_ALL);
                 java.sql.ResultSet resultSet = statement.executeQuery()) {
 
             // Loop through each row in the database result
@@ -76,8 +92,8 @@ public class ProductDAO {
 
             }
         } catch (SQLException e) {
-            System.out.println("ERROR: No se pudieron obtener los productos de la base de datos.");
-            e.printStackTrace();
+            throw new DAOException("ERROR: No se pudieron obtener los productos de la base de datos.", e);
+
         }
         return productList;
     }
@@ -86,40 +102,43 @@ public class ProductDAO {
      * Deletes a product from the database using its ID.
      * 
      * @param id The unique identifier of the product to delete.
+     * @return {@code true} if at least one row was a deleted.
+     * @throws DAOException if a database error occurs.
      */
-    public void delete(Integer id) {
-        String sql = "DELETE FROM products WHERE id = ? ";
+    public boolean delete(Integer id) {
 
         try (Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(SQL_DELETE)) {
 
             // 1. Replace the ? placeholder with the actual product ID
             statement.setInt(1, id);
 
             // 2. Execute the DELETE command an store how many rows where rowsAffected
-            int numDelete = statement.executeUpdate();
+            int rowsDeleted = statement.executeUpdate();
 
             // 3. If at least one row was deleted, the opperation was succesfull
-            if (numDelete > 0) {
-                System.out.println("ÉXITO: Se elimino correctamente el producto.");
+            if (rowsDeleted > 0) {
+                System.out.println("ÉXITO: Se elimino correctamente el producto con id= " + id);
             }
+            return rowsDeleted > 0;
 
         } catch (SQLException e) {
-            System.out.println("ERROR: No se pudo eliminar el producto.");
-            e.printStackTrace();
+            throw new DAOException("ERROR: No se pudo eliminar el producto id= " + id, e);
+
         }
     }
 
     /**
      * Updates an existing product in the database.
-     * *@param product The product object containing the update data and its
-     * original ID.
+     * 
+     * @param product The product object containing the update data and its
+     * @return {@code true} if the row was found and updated.
+     * @throws DAOException if a database error occurs.
      */
-    public void update(Product product) {
-        String sql = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?";
+    public boolean update(Product product) {
 
         try (Connection connection = DatabaseConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(SQL_UPDATE)) {
 
             // 1. Inject the updated data into the placeholders (1 to 4)
             statement.setString(1, product.getName());
@@ -135,11 +154,22 @@ public class ProductDAO {
 
             // 4. Confirm the action checking if rowsAffected > 0
             if (rowsAffected > 0) {
-                System.out.println("ÉXITO: Se actualizo correctamente el producto.");
+                System.out.println("ÉXITO: Se actualizo correctamente el producto id= " + product.getId());
             }
+            return rowsAffected > 0;
         } catch (SQLException e) {
-            System.out.println("ERROR: No se pudo actualizar el producto.");
-            e.printStackTrace();
+            throw new DAOException("ERROR no se pudo actualizar el producto: " + product.getId(), e);
+
+        }
+    }
+
+    /**
+     * Unchecked wrapper for {@link SQLException} thrown by this DAO.
+     * Prevents JDBC types from leaking into the controller or view layers.
+     */
+    public static class DAOException extends RuntimeException {
+        public DAOException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

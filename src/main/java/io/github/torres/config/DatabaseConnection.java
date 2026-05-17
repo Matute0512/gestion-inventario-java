@@ -3,6 +3,7 @@ package io.github.torres.config;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 /**
  * Manages the connection to the database.
@@ -22,13 +23,23 @@ public class DatabaseConnection {
     private static final String PASSWORD = "root";
 
     /**
-     * Establishes and returns a connection to the database.
-     * 
-     * @return A connection object to interact with the database.
-     * @throws SQLException If a database access error occurs or the url is null.
+     * Establishes and returns a new JDBC connection to the database.
+     *
+     * <p>
+     * The caller is responsible for closing the connection (use
+     * try-with-resources).
+     * </p>
+     *
+     * @return a fresh {@link Connection} to the configured database.
+     * @throws SQLException if the connection cannot be established.
      */
     public static Connection getConnection() throws SQLException {
         // The DriverManager acts as the bridge between Java and mysql
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        Properties props = new Properties();
+        props.setProperty("user", USER);
+        props.setProperty("password", PASSWORD);
+        // Fail fast if the DB is unreachable (5 seconds)
+        props.setProperty("connectTimeout", "5000");
+        return DriverManager.getConnection(URL, props);
     }
 }
