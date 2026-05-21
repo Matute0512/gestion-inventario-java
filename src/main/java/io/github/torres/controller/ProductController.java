@@ -42,6 +42,9 @@ public class ProductController {
         this.view.getBtnAdd().addActionListener(e -> addProduct());
         this.view.getBtnDelete().addActionListener(e -> deleteProduct());
         this.view.getBtnUpdate().addActionListener(e -> updateProduct());
+        this.view.getBtnSearch().addActionListener(e -> searchProduct());
+        this.view.getBtnClearSearch().addActionListener(e -> clearSearchAndFilters());
+        this.view.getComboFilter().addActionListener(e -> applyFilter());
 
         // Listener to detect when a row in the table is clicked
         this.view.getTblProducts().getSelectionModel().addListSelectionListener(e -> {
@@ -52,6 +55,29 @@ public class ProductController {
 
         // Initial load of data when the application starts
         refreshTable();
+    }
+
+    /**
+     * Helper method: Renders any given list of products into the JTable
+     * Prevents code duplication when refreshing, searching, or filtering.
+     */
+    private void renderTableData(List<Product> products) {
+        String[] columns = { "ID", "Nombre", "Precio", "Stock", "Descripción" };
+
+        // DefaultTableModel allows us to dynamically alter rows
+        DefaultTableModel model = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        // Populate the data matrix
+        for (Product p : products) {
+            Object[] row = { p.getId(), p.getName(), p.getPrice(), p.getStock(), p.getDescription() };
+            model.addRow(row);
+        }
+        view.getTblProducts().setModel(model);
     }
 
     /**
@@ -82,6 +108,61 @@ public class ProductController {
         } catch (DAOException ex) {
             showError("No se pudo cargar la lista de productos.\n" + ex.getMessage());
         }
+    }
+
+    /**
+     * Retrieves products based on the search keyword and updates the table.
+     */
+    private void searchProduct() {
+        String keyWord = view.getTextSearch();
+        if (keyWord.isEmpty()) {
+            refreshTable();
+            return;
+        }
+
+        try {
+            List<Product> results = productDAO.search(keyWord);
+            renderTableData(results);
+        } catch (DAOException ex) {
+            showError("Error en la busqueda.\n" + ex.getMessage());
+        }
+    }
+
+    /**
+     * Applies the selected filter from the combo box and updates the table.
+     */
+    private void applyFilter() {
+        int selctedIndex = view.getComboFilter().getSelectedIndex();
+
+        try {
+            List<Product> results;
+            switch (selctedIndex) {
+                case 1: // Highest Price (Desending)
+                    results = productDAO.sortByPrice(false);
+                    break;
+                case 2: // Lowest Price (Asending)
+                    results = productDAO.sortByPrice(true);
+                    break;
+                case 3: // Out of Stock
+                    results = productDAO.getOutOfStock();
+                    break;
+                default: // All (Default case 0)
+                    results = productDAO.getAll();
+                    break;
+            }
+            renderTableData(results);
+        } catch (DAOException ex) {
+            showError("Error al aplicar filtro.\n" + ex.getMessage());
+        }
+    }
+
+    /**
+     * Clears the search field, resets the filter, and reloads all data.
+     */
+    private void clearSearchAndFilters() {
+        view.setTextSearch("");
+        view.getComboFilter().setSelectedIndex(0); // Resets the filter to "Todos"
+        refreshTable();
     }
 
     /**

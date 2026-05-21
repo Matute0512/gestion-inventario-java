@@ -1,7 +1,9 @@
 package io.github.torres.dao;
 
+import java.net.ConnectException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,8 @@ public class ProductDAO {
     private static final String SQL_DELETE = "DELETE FROM products WHERE id = ? ";
 
     private static final String SQL_UPDATE = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?";
+
+    private static final String SQL_SEARCH = "SELECT * FROM products WHERE name LIKE ? OR description LIKE ?";
 
     /**
      * Inserts a new product into the database.
@@ -78,16 +82,9 @@ public class ProductDAO {
             // Loop through each row in the database result
             while (resultSet.next()) {
                 // 1. Create an empty mold for this specific row
-                Product product = new Product();
+                Product product = mapResultSetProduct(resultSet);
 
-                // 2. Extrct data from the row and put in the object
-                product.setId(resultSet.getInt("id"));
-                product.setName(resultSet.getString("name"));
-                product.setDescription(resultSet.getString("description"));
-                product.setPrice(resultSet.getDouble("price"));
-                product.setStock(resultSet.getInt("stock"));
-
-                // 3. Add the complete product to our list
+                // 2. Add the complete product to our list
                 productList.add(product);
 
             }
@@ -164,10 +161,120 @@ public class ProductDAO {
     }
 
     /**
+     * Searches products by name or description.
+     * 
+     * @param keyword The search keyword.
+     * @return A list of matching products.
+     * @throws DAOException if a database error occurs.
+     */
+    public List<Product> search(String keyword) {
+        List<Product> productList = new ArrayList<>();
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(SQL_SEARCH)) {
+
+            String searchPattern = "%" + keyword + "%";
+            statement.setString(1, searchPattern);
+            statement.setString(2, searchPattern);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Product product = mapResultSetProduct(resultSet);
+                    productList.add(product);
+                }
+            }
+        } catch (SQLException e) {
+            throw new DAOException(
+                    "Error: No se puede realizar la busqueda con la palabra: "
+                            + keyword,
+                    e);
+        }
+        return productList;
+    }
+
+    /**
+     * Sorts all products by price.
+     * 
+     * @param ascending If true, sorts from lowest to highest. If false, highest to
+     *                  lowest.
+     * @return A sorted list of products.
+     * @throws DAOException if a database error occurs.
+     */
+    public List<Product> sortByPrice(boolean ascending) {
+        List<Product> productList = new ArrayList<>();
+
+        // In SQL, we cannot parametrize ASC/DESC with "?", so we build the query
+        String order = ascending ? "ASC" : "DESC";
+        String sql = "SELECT * FROM products ORDER BY price " + order;
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                Product product = mapResultSetProduct(resultSet);
+                productList.add(product);
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Error: No se puede ordenar los productos por precio", e);
+        }
+        return productList;
+    }
+
+    /**
+     * Retrieves all products that currently have zero stock.
+     * 
+     * @return A list of out-of-stock products.
+     * @throws DAOException if a database error occurs.
+     */
+    public List<Product> getOutOfStock() {
+        List<Product> productList = new ArrayList<>();
+        String sql = "SELECT * FROM products WHERE stock = 0";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                Product product = mapResultSetProduct(resultSet);
+                productList.add(product);
+            }
+        } catch (SQLException e) {
+            throw new DAOException("Error: No se pudieron filtrar los productos agotados.", e);
+        }
+        return productList;
+    }
+
+    /**
+     * Maps the current row of a ResultSet into a Product object.
+     * 
+     * @param resultSet The ResultSet positioned on a valid row.
+     * @return A populated Product object.
+     * @throws SQLException if column extraction fails.
+     */
+    private Product mapResultSetProduct(ResultSet resultSet) throws SQLException {
+        Product product = new Product();
+
+        product.setId(resultSet.getInt("id"));
+        product.setName(resultSet.getString("name"));
+        product.setDescription(resultSet.getString("description"));
+        product.setPrice(resultSet.getDouble("price"));
+        product.setStock(resultSet.getInt("stock"));
+
+        return product;
+    }
+
+    /**
      * Unchecked wrapper for {@link SQLException} thrown by this DAO.
      * Prevents JDBC types from leaking into the controller or view layers.
      */
     public static class DAOException extends RuntimeException {
+
+        /**
+         * Creates a new DAOException.
+         *
+         * @param message Detailed error message.
+         * @param cause   Original SQLException cause.
+         */
         public DAOException(String message, Throwable cause) {
             super(message, cause);
         }
