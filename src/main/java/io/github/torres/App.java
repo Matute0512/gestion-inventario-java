@@ -1,6 +1,13 @@
 package io.github.torres;
 
+import java.awt.Font;
+import java.util.Enumeration;
+
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import io.github.torres.controller.ProductController;
 import io.github.torres.dao.ProductDAO;
@@ -8,28 +15,51 @@ import io.github.torres.view.MainView;
 
 /**
  * Main entry point for the Inventory Management System.
- * Implements an interactive console-based UI.
  */
 public class App {
+
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(() -> {
+
+        SwingUtilities.invokeLater(() -> {
+
             try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+
+                // Modern Look and Feel
+                FlatLightLaf.setup();
+                UIManager.put("Button.arc", 15);
+                UIManager.put("Component.arc", 15);
+                UIManager.put("TextComponent.arc", 10);
+                UIManager.put("ProgressBar.arc", 15);
+
+                // Global Font Settings
+                Font globalFont = new Font("Segoe UI", Font.PLAIN, 15);
+
+                Enumeration<Object> keys = UIManager.getDefaults().keys();
+
+                while (keys.hasMoreElements()) {
+
+                    Object key = keys.nextElement();
+                    Object value = UIManager.get(key);
+
+                    if (value instanceof FontUIResource) {
+                        UIManager.put(key, new FontUIResource(globalFont));
+                    }
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            // 1. Initialize the MODEL layer (Data Access)
+            // MODEL
             ProductDAO productDAO = new ProductDAO();
 
-            // 2. Initialize the VIEW layer (GUI Framework)
+            // VIEW
             MainView window = new MainView();
 
-            // 3. Initialize the CONTROLLER layer (The Brain)
-            // Pass view and dao references so it can bridge them together
+            // CONTROLLER
             new ProductController(window, productDAO);
 
-            // Display the application window
+            // SHOW WINDOW
             window.setVisible(true);
         });
     }
