@@ -1,6 +1,5 @@
 package io.github.torres.dao;
 
-import java.net.ConnectException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,7 +36,7 @@ public class ProductDAO {
     /**
      * Inserts a new product into the database.
      * * @param product The product object containing the data to be saved.
-     * 
+     *
      * @throws DAOException if a database error occurs.
      */
     public void save(Product product) {
@@ -67,7 +66,7 @@ public class ProductDAO {
 
     /**
      * Retrieves all products from the database.
-     * 
+     *
      * @return A list of Product objects.
      * @throws DAOException if a database error occurs
      */
@@ -97,7 +96,7 @@ public class ProductDAO {
 
     /**
      * Deletes a product from the database using its ID.
-     * 
+     *
      * @param id The unique identifier of the product to delete.
      * @return {@code true} if at least one row was a deleted.
      * @throws DAOException if a database error occurs.
@@ -127,7 +126,7 @@ public class ProductDAO {
 
     /**
      * Updates an existing product in the database.
-     * 
+     *
      * @param product The product object containing the update data and its
      * @return {@code true} if the row was found and updated.
      * @throws DAOException if a database error occurs.
@@ -162,7 +161,7 @@ public class ProductDAO {
 
     /**
      * Searches products by name or description.
-     * 
+     *
      * @param keyword The search keyword.
      * @return A list of matching products.
      * @throws DAOException if a database error occurs.
@@ -194,7 +193,7 @@ public class ProductDAO {
 
     /**
      * Sorts all products by price.
-     * 
+     *
      * @param ascending If true, sorts from lowest to highest. If false, highest to
      *                  lowest.
      * @return A sorted list of products.
@@ -223,7 +222,7 @@ public class ProductDAO {
 
     /**
      * Retrieves all products that currently have zero stock.
-     * 
+     *
      * @return A list of out-of-stock products.
      * @throws DAOException if a database error occurs.
      */
@@ -246,7 +245,7 @@ public class ProductDAO {
 
     /**
      * Maps the current row of a ResultSet into a Product object.
-     * 
+     *
      * @param resultSet The ResultSet positioned on a valid row.
      * @return A populated Product object.
      * @throws SQLException if column extraction fails.
