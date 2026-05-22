@@ -2,13 +2,10 @@ package io.github.torres;
 
 import java.awt.Font;
 import java.util.Enumeration;
-
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
-
 import com.formdev.flatlaf.FlatLightLaf;
-
 import io.github.torres.controller.ProductController;
 import io.github.torres.dao.ProductDAO;
 import io.github.torres.view.MainView;
