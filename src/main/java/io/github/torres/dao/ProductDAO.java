@@ -6,36 +6,38 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
 import io.github.torres.config.DatabaseConnection;
 import io.github.torres.model.Product;
 
 /**
- * Data Access Object for the {@link Product} entity.
- * Handles all CRUD operations against the {@code products} table using JDBC.
+ * Data Access Object for the {@link Product} entity. Handles all CRUD operations against the
+ * {@code products} table using JDBC.
  *
  * <p>
- * All methods propagate {@link SQLException} as a checked
- * {@link DAOException} (unchecked wrapper) so callers (Controller) can
- * display meaningful error dialogs without leaking JDBC types into the UI.
+ * All methods propagate {@link SQLException} as a checked {@link DAOException} (unchecked wrapper)
+ * so callers (Controller) can display meaningful error dialogs without leaking JDBC types into the
+ * UI.
  * </p>
  */
 public class ProductDAO {
 
     // SQL constants
-    private static final String SQL_INSERT = "INSERT INTO products(name, description,price, stock) VALUES (?, ?, ?, ?)";
+    private static final String SQL_INSERT =
+            "INSERT INTO products(name, description,price, stock) VALUES (?, ?, ?, ?)";
 
     private static final String SQL_SELECT_ALL = "SELECT * FROM products";
 
     private static final String SQL_DELETE = "DELETE FROM products WHERE id = ? ";
 
-    private static final String SQL_UPDATE = "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?";
+    private static final String SQL_UPDATE =
+            "UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?";
 
-    private static final String SQL_SEARCH = "SELECT * FROM products WHERE name LIKE ? OR description LIKE ?";
+    private static final String SQL_SEARCH =
+            "SELECT * FROM products WHERE name LIKE ? OR description LIKE ?";
 
     /**
-     * Inserts a new product into the database.
-     * * @param product The product object containing the data to be saved.
+     * Inserts a new product into the database. * @param product The product object containing the
+     * data to be saved.
      *
      * @throws DAOException if a database error occurs.
      */
@@ -88,7 +90,8 @@ public class ProductDAO {
 
             }
         } catch (SQLException e) {
-            throw new DAOException("ERROR: No se pudieron obtener los productos de la base de datos.", e);
+            throw new DAOException(
+                    "ERROR: No se pudieron obtener los productos de la base de datos.", e);
 
         }
         return productList;
@@ -150,11 +153,13 @@ public class ProductDAO {
 
             // 4. Confirm the action checking if rowsAffected > 0
             if (rowsAffected > 0) {
-                System.out.println("ÉXITO: Se actualizo correctamente el producto id= " + product.getId());
+                System.out.println(
+                        "ÉXITO: Se actualizo correctamente el producto id= " + product.getId());
             }
             return rowsAffected > 0;
         } catch (SQLException e) {
-            throw new DAOException("ERROR no se pudo actualizar el producto: " + product.getId(), e);
+            throw new DAOException("ERROR no se pudo actualizar el producto: " + product.getId(),
+                    e);
 
         }
     }
@@ -184,9 +189,7 @@ public class ProductDAO {
             }
         } catch (SQLException e) {
             throw new DAOException(
-                    "Error: No se puede realizar la busqueda con la palabra: "
-                            + keyword,
-                    e);
+                    "Error: No se puede realizar la busqueda con la palabra: " + keyword, e);
         }
         return productList;
     }
@@ -194,8 +197,7 @@ public class ProductDAO {
     /**
      * Sorts all products by price.
      *
-     * @param ascending If true, sorts from lowest to highest. If false, highest to
-     *                  lowest.
+     * @param ascending If true, sorts from lowest to highest. If false, highest to lowest.
      * @return A sorted list of products.
      * @throws DAOException if a database error occurs.
      */
@@ -263,8 +265,31 @@ public class ProductDAO {
     }
 
     /**
-     * Unchecked wrapper for {@link SQLException} thrown by this DAO.
-     * Prevents JDBC types from leaking into the controller or view layers.
+     * Reduces the stock of a specific product by a given quantity. Uses a direc SQL UPDATE to
+     * ensure atomic database operations.
+     * 
+     * @param productId the ID of the product sold
+     * @param quantity the mount to substract from current stock
+     * @throws DAOExeption if the database operation fails
+     */
+    public void reduceStock(int productId, int quantity) throws DAOException {
+        String sql = "UPDATE products SET stock = stock - ? WHERE id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, quantity);
+            statement.setInt(2, productId);
+
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new DAOException("Error al actualizar el stock durante el proceso de pago: ", e);
+        }
+    }
+
+    /**
+     * Unchecked wrapper for {@link SQLException} thrown by this DAO. Prevents JDBC types from
+     * leaking into the controller or view layers.
      */
     public static class DAOException extends RuntimeException {
 
@@ -272,7 +297,7 @@ public class ProductDAO {
          * Creates a new DAOException.
          *
          * @param message Detailed error message.
-         * @param cause   Original SQLException cause.
+         * @param cause Original SQLException cause.
          */
         public DAOException(String message, Throwable cause) {
             super(message, cause);
