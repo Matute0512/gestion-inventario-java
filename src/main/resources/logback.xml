@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Define the log pattern (format for each log message) -->
+    <property name="LOG_PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- ============================================ -->
+    <!-- Console Appender (prints to system output) -->
+    <!-- ============================================ -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- File Appender (writes to file) -->
+    <!-- ============================================ -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- File location -->
+        <file>logs/gestion-inventario.log</file>
+
+        <!-- Rolling Policy - rotate logs when they get too big -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Name pattern for archived logs: gestion-inventario-2025-05-22.1.log -->
+            <fileNamePattern>logs/gestion-inventario-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+            <!-- Rotate file when it reaches 10MB -->
+            <maxFileSize>10MB</maxFileSize>
+
+            <!-- Keep logs for maximum 30 days -->
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <!-- Log format in file -->
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ============================================ -->
+    <!-- Logger Configuration by Package -->
+    <!-- ============================================ -->
+
+    <!-- Logger for application code (DEBUG level) -->
+    <logger name="io.github.torres" level="DEBUG"/>
+
+    <!-- Logger for database operations -->
+    <logger name="io.github.torres.dao" level="DEBUG"/>
+
+    <!-- Logger for configuration -->
+    <logger name="io.github.torres.config" level="INFO"/>
+
+    <!-- Logger for controllers -->
+    <logger name="io.github.torres.controller" level="DEBUG"/>
+
+    <!-- Root Logger Configuration -->
+    <!-- This applies to everything not specifically configured above -->
+    <root level="INFO">
+        <!-- Send to console -->
+        <appender-ref ref="CONSOLE"/>
+        <!-- Send to file -->
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
