@@ -9,3 +9,8 @@ target/
 .idea/
 *.iml
 *.session.sql
+
+# Ignore production config
+application-prod.properties
+.env
+*.local.properties

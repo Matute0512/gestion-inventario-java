@@ -1,5 +1,6 @@
 package io.github.torres.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -10,7 +11,8 @@ import io.github.torres.model.Product;
 import io.github.torres.view.MainView;
 import io.github.torres.view.panels.InventoryPanel;
 import io.github.torres.view.panels.SalesPanel;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * Orchestrates the data flow between the {@link MainView} (GUI) and the {@link ProductDAO}
  * (database).
@@ -22,6 +24,7 @@ import io.github.torres.view.panels.SalesPanel;
  */
 public class ProductController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final MainView view;
     private final ProductDAO productDAO;
     private final InventoryPanel inventoryPanel;
@@ -456,26 +459,32 @@ public class ProductController {
      * Processes the checkout, updating the database inventory and clearing the cart.
      */
     private void checkout() {
+        logger.info("Iniciando proceso de checkout");
+
         DefaultTableModel cartModel = (DefaultTableModel) salesPanel.getTblCart().getModel();
         int rowsCount = cartModel.getRowCount();
 
         // Prevent checkout if cart is empty
         if (rowsCount == 0) {
-            JOptionPane.showMessageDialog(view, "El carrito está vacío.", "Atención",
-                    JOptionPane.WARNING_MESSAGE);
+            logger.warn("Intento de checkout con carrito vacío.");
+            JOptionPane.showMessageDialog(view, "El carrito está vacío.", "Atención", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            int count = rowsCount;
-            // Iterate through all cart items and deduct stock in the database
-            for (int i = 0; i < count; i++) {
+            // Prepare cart items for transaction
+            List<Object[]> cartItems = new ArrayList<>();
+            for  (int i = 0; i < rowsCount; i++) {
                 int productId = (int) cartModel.getValueAt(i, 0);
                 int quantity = (int) cartModel.getValueAt(i, 2);
+                double subtotal = (double) cartModel.getValueAt(i, 3);
 
-                productDAO.reduceStock(productId, quantity);
+                cartItems.add(new Object[] {productId, quantity, subtotal});
             }
+            // Register sale with transaction
+            productDAO.registerSale(cartTotal,cartItems);
 
-            // Provide visual feedback for successfull transaction
+            logger.info("Venta completada exitosamente. Total: ${}",cartTotal);
+            // Provide visual feedback for successfully transaction
             JOptionPane.showMessageDialog(view, "¡Compra finalizada con éxito!", "Venta Completada",
                     JOptionPane.INFORMATION_MESSAGE);
 
@@ -488,6 +497,7 @@ public class ProductController {
             // Refresh all tables (Inventory and POS Catalog) to reflect the new store
             refreshTable();
         } catch (DAOException ex) {
+            logger.error("Error durante checkout: {}",ex.getMessage(), ex);
             showError("Error al procesar la compra.\n" + ex.getMessage());
         }
     }
