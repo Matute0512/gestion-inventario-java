@@ -1,7 +1,6 @@
 package io.github.torres.view;
 
-import java.awt.BorderLayout;
-import java.awt.Font;
+import java.awt.*;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import io.github.torres.view.panels.InventoryPanel;
@@ -49,6 +48,8 @@ public class MainView extends JFrame {
         setLayout(new BorderLayout());
 
         getContentPane().setBackground(Theme.BACKGROUND_COLOR);
+
+        setMinimumSize(new Dimension(Theme.DIALOG_MIN_WIDTH,Theme.DIALOG_MIN_HEIGHT));
     }
 
     /**

@@ -265,7 +265,7 @@ public class InventoryPanel extends JPanel {
 
         table.setAutoCreateRowSorter(true);
 
-        table.setRowHeight(32);
+        table.setRowHeight(Theme.DEFAULT_TABLE_ROW_HEIGHT);
 
         table.setShowGrid(true);
 

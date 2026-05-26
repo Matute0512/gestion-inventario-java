@@ -68,7 +68,7 @@ public class SalesPanel extends JPanel {
         String[] cols = {"ID", "Nombre", "Precio", "Stock"};
         tblSalesProducts = new JTable(new Object[0][0], cols);
         tblSalesProducts.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tblSalesProducts.setRowHeight(32);
+        tblSalesProducts.setRowHeight(Theme.DEFAULT_TABLE_ROW_HEIGHT);
         JScrollPane scroll = UIStyles.createScrollPane(tblSalesProducts);
         panel.add(scroll, BorderLayout.CENTER);
 
@@ -76,7 +76,12 @@ public class SalesPanel extends JPanel {
         JPanel addPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
         addPanel.setBackground(Theme.PANEL_COLOR);
         addPanel.add(new JLabel("Cantidad:"));
-        spinnerQuantity = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
+        spinnerQuantity = new JSpinner(new SpinnerNumberModel(
+                Theme.SPINNER_INITIAL_VALUE,
+                Theme.SPINNER_MIN_VALUE,
+                Theme.SPINNER_MAX_VALUE,
+                Theme.SPINNER_STEP
+        ));
         spinnerQuantity.setPreferredSize(new Dimension(80, 30));
         btnAddToCart = UIStyles.createButton("Agregar al Carrito", Theme.SUCCESS_COLOR);
         addPanel.add(spinnerQuantity);
@@ -99,7 +104,7 @@ public class SalesPanel extends JPanel {
         String[] cols = {"ID", "Nombre", "Cantidad", "Subtotal"};
         tblCart = new JTable(new Object[0][0], cols);
         tblCart.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tblCart.setRowHeight(32);
+        tblCart.setRowHeight(Theme.DEFAULT_TABLE_ROW_HEIGHT);
         JScrollPane scroll = UIStyles.createScrollPane(tblCart);
         panel.add(scroll, BorderLayout.CENTER);
 
