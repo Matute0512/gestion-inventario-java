@@ -13,6 +13,8 @@ import io.github.torres.view.MainView;
 import io.github.torres.view.panels.InventoryPanel;
 import io.github.torres.view.panels.SalesPanel;
 import io.github.torres.view.styles.Theme;
+import io.github.torres.exception.ValidationException;
+import io.github.torres.util.ValidationUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -153,11 +155,11 @@ public class ProductController {
      * Applies the selected filter from the combo box and updates the table.
      */
     private void applyFilter() {
-        int selctedIndex = inventoryPanel.getComboFilter().getSelectedIndex();
+        int selectedIndex = inventoryPanel.getComboFilter().getSelectedIndex();
 
         try {
             List<Product> results;
-            switch (selctedIndex) {
+            switch (selectedIndex) {
                 case 1:
                     // Highest Price (Desending)
                     results = productDAO.sortByPrice(false);
@@ -217,72 +219,37 @@ public class ProductController {
      * Gathers inputs from the form, validates them, and saves a new product to the databese.
      */
     private void addProduct() {
-        String name = inventoryPanel.getProductName();
-        String description = inventoryPanel.getProductDescription();
-        String priceStr = inventoryPanel.getProductPrice();
-        String stockStr = inventoryPanel.getProductStock();
+        logger.debug("Intentando agregar nuevo producto...");
+        try{
+            String name = inventoryPanel.getProductName();
+            String description = inventoryPanel.getProductDescription();
+            String priceStr = inventoryPanel.getProductPrice();
+            String stockStr = inventoryPanel.getProductStock();
 
-        // Basic Defensive Validation
-        if (name.isEmpty() || priceStr.isEmpty() || stockStr.isEmpty()) {
-            logger.warn("Intento de agregar producto con campos vacíos");
-            JOptionPane.showMessageDialog(view,
-                    "Por favor, rellene todos los campos obligatorios (Nombre, Precio, Stock)",
-                    "Error de Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        // Validate string lengths
-        if (name.length() > Theme.MAX_PRODUCT_NAME_LENGTH ||
-                description.length() > Theme.MAX_DESCRIPTION_LENGTH) {
-            logger.warn("Nombre o descripción demasiado largos");
-            JOptionPane.showMessageDialog(view,
-                    "El nombre (máx " + Theme.MAX_PRODUCT_NAME_LENGTH +
-                            " caracteres) o la descripción (máx " + Theme.MAX_DESCRIPTION_LENGTH +
-                            " caracteres) son demasiado largos.",
-                    "Error de Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+            // Validate all fields using ValidationUtil
+            double[] values = ValidationUtil.validateProductFields(name,description,priceStr,stockStr);
+            Double price = values[0];
+            Integer stock = (int) values[1];
 
-        Double price;
-        Integer stock;
-
-        try {
-            price = Double.parseDouble(priceStr);
-            stock = Integer.parseInt(stockStr);
-
-        } catch (NumberFormatException ex) {
-            logger.warn("Formato de datos no válido en addProduct: {}",ex.getMessage());
-            JOptionPane.showMessageDialog(view,
-                    "Formato de datos no válido. El precio debe ser decimal y el stock un número entero.",
-                    "Error de formato de datos", JOptionPane.WARNING_MESSAGE);
-            return;
-
-        }
-        // Validate numeric ranges
-        if (price < Theme.MIN_PRICE || price > Theme.MAX_PRICE ||
-                stock < 0 || stock > Theme.MAX_STOCK) {
-            logger.warn("Valores fuera de rango. Precio: {}, Stock: {}", price, stock);
-            JOptionPane.showMessageDialog(view,
-                    "Valores fuera de rango.\n" +
-                            "Precio: $" + String.format("%.2f", Theme.MIN_PRICE) + " - $" + String.format("%.2f", Theme.MAX_PRICE) +
-                            "\nStock máximo: " + Theme.MAX_STOCK,
-                    "Error de Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        try {
-            Product product = new Product(null, name, description, price, stock);
+            // Create and save product
+            Product product = new Product(null,name,description,price,stock);
             productDAO.save(product);
 
             logger.info("✅ Producto agregado correctamente: {}", name);
-            JOptionPane.showMessageDialog(view, "Producto agregado correctamente.", "Éxito",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(view, "Producto agregado correctamente","Exito",JOptionPane.INFORMATION_MESSAGE);
+
             inventoryPanel.clearFields();
             inventoryPanel.getTblProducts().clearSelection();
             refreshTable();
+
+        } catch (ValidationException ex) {
+            logger.warn("Error de validacion en addProduct: {}",ex.getMessage());
+            showError(ex.getMessage());
         } catch (DAOException ex) {
-            logger.error("❌ Error al guardar producto: {}", name, ex);
+            logger.error("❌ Error al guardar producto", ex);
             showError("No se pudo guardar el producto.\n" + ex.getMessage());
         }
+
     }
 
     /**
@@ -295,59 +262,34 @@ public class ProductController {
             return;
         }
 
-        String name = inventoryPanel.getProductName();
-        String description = inventoryPanel.getProductDescription();
-        if (name.length() > Theme.MAX_PRODUCT_NAME_LENGTH || description.length() > Theme.MAX_DESCRIPTION_LENGTH) {
-            logger.warn("Nombre o descripcion demasiado largos en update");
-            JOptionPane.showMessageDialog(view,
-                    "El nombre (máx " + Theme.MAX_PRODUCT_NAME_LENGTH +
-                            ") o la descripción (máx " + Theme.MAX_DESCRIPTION_LENGTH +
-                            ") son demasiado largos.",
-                    "Error de Validación", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        String priceStr = inventoryPanel.getProductPrice();
-        String stockStr = inventoryPanel.getProductStock();
+        try{
+            String name = inventoryPanel.getProductName();
+            String description = inventoryPanel.getProductDescription();
+            String priceStr = inventoryPanel.getProductPrice();
+            String stockStr = inventoryPanel.getProductStock();
 
-        if (name.isEmpty() || priceStr.isEmpty() || stockStr.isEmpty()) {
-            logger.warn("Campos vacios en update");
-            showError("Faltan campos obligatorios.");
-            return;
-        }
-        try {
-            Double price = Double.parseDouble(priceStr);
-            Integer stock = Integer.parseInt(stockStr);
+            // Validate all fields using ValidationUtil
+            double[] values = ValidationUtil.validateProductFields(name,description,priceStr,stockStr);
+            Double price = values[0];
+            Integer stock = (int) values[1];
 
-            if (price < Theme.MIN_PRICE || price > Theme.MAX_PRICE ||
-                    stock < 0 || stock > Theme.MAX_STOCK) {
-                logger.warn("Valores fuera de rango en update. Precio: {}, Stock: {}", price, stock);
-                JOptionPane.showMessageDialog(view,
-                        "Valores fuera de rango. Precio: $" + String.format("%.2f", Theme.MIN_PRICE) +
-                                " - $" + String.format("%.2f", Theme.MAX_PRICE) +
-                                ". Stock máximo: " + Theme.MAX_STOCK,
-                        "Error de Validación", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            // We assemble the product with the saved ID
-            Product product = new Product(currentEditingId, name, description, price, stock);
+            // Update and save product
+            Product product = new Product(currentEditingId,name,description,price,stock);
             productDAO.update(product);
 
-            logger.info("Producto actualizado correctamente. ID: {}, Nombre: {}", currentEditingId, name);
+            logger.info("✅ Producto actualizado correctamente. ID: {}", currentEditingId);
             JOptionPane.showMessageDialog(view, "Producto actualizado correctamente.", "Éxito",
                     JOptionPane.INFORMATION_MESSAGE);
 
-            // We reset the visual state
             resetFormState();
-
             refreshTable();
 
-        } catch (NumberFormatException ex) {
-            logger.warn("Formato numérico inválido en update");
-            showError("Formato númerico inválido.");
+        } catch (ValidationException ex) {
+            logger.warn("Error de validacion en updateProduct: {}", ex.getMessage());
+            showError(ex.getMessage());
         } catch (DAOException ex) {
             logger.error("❌ Error al actualizar producto: {}", currentEditingId, ex);
-            showError("No se puede actualizar el producto.\n" + ex.getMessage());
+            showError("No se pudo actualizar el producto.\n" + ex.getMessage());
         }
     }
 
