@@ -101,21 +101,21 @@ public class InventoryPanel extends JPanel {
         // Name
         addLabel(fieldsPanel, "Nombre:", gbc, 0);
 
-        textName = UIStyles.creaTextField();
+        textName = UIStyles.createTextField();
 
         addField(fieldsPanel, textName, gbc, 0);
 
         // Price
         addLabel(fieldsPanel, "Precio ($):", gbc, 1);
 
-        textPrice = UIStyles.creaTextField();
+        textPrice = UIStyles.createTextField();
 
         addField(fieldsPanel, textPrice, gbc, 1);
 
         // Stock
         addLabel(fieldsPanel, "Stock:", gbc, 2);
 
-        textStock = UIStyles.creaTextField();
+        textStock = UIStyles.createTextField();
 
         addField(fieldsPanel, textStock, gbc, 2);
 

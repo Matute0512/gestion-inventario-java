@@ -7,6 +7,7 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import io.github.torres.dao.ProductDAO;
 import io.github.torres.dao.ProductDAO.DAOException;
+import io.github.torres.model.CartItem;
 import io.github.torres.model.Product;
 import io.github.torres.view.MainView;
 import io.github.torres.view.panels.InventoryPanel;
@@ -441,13 +442,13 @@ public class ProductController {
 
     private void removeFromCart() {
         JTable carTable = salesPanel.getTblCart();
-        int selctedRow = carTable.getSelectedRow();
+        int selectedRow = carTable.getSelectedRow();
 
-        if (selctedRow == -1)
+        if (selectedRow == -1)
             return;
 
-        double subtotal = (double) carTable.getValueAt(selctedRow, 3);
-        ((DefaultTableModel) carTable.getModel()).removeRow(selctedRow);
+        double subtotal = (double) carTable.getValueAt(selectedRow, 3);
+        ((DefaultTableModel) carTable.getModel()).removeRow(selectedRow);
 
         cartTotal -= subtotal;
         if (cartTotal < 0.01)
@@ -472,13 +473,13 @@ public class ProductController {
         }
         try {
             // Prepare cart items for transaction
-            List<Object[]> cartItems = new ArrayList<>();
+            List<CartItem> cartItems = new ArrayList<>();
             for  (int i = 0; i < rowsCount; i++) {
                 int productId = (int) cartModel.getValueAt(i, 0);
                 int quantity = (int) cartModel.getValueAt(i, 2);
                 double subtotal = (double) cartModel.getValueAt(i, 3);
 
-                cartItems.add(new Object[] {productId, quantity, subtotal});
+                cartItems.add(new CartItem(productId, quantity, subtotal));
             }
             // Register sale with transaction
             productDAO.registerSale(cartTotal,cartItems);

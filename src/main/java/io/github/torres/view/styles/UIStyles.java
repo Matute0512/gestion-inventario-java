@@ -54,7 +54,7 @@ public class UIStyles {
         return button;
     }
 
-    public static JTextField creaTextField() {
+    public static JTextField createTextField() {
 
         JTextField field = new JTextField();
 

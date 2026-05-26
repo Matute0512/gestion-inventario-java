@@ -55,7 +55,7 @@ public class SalesPanel extends JPanel {
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         panel.setBackground(Theme.PANEL_COLOR);
         searchPanel.add(new JLabel("Buscar:"));
-        textSalesSearch = UIStyles.creaTextField();
+        textSalesSearch = UIStyles.createTextField();
         btnSalesSearch = UIStyles.createButton("Buscar", Theme.PRIMARY_COLOR);
         btnSalesSearch.setPreferredSize(new Dimension(100, 30));
 
