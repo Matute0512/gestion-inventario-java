@@ -33,7 +33,7 @@ public class Theme {
 
     // Numeric Limits
     public static final double MIN_PRICE = 0.01;
-    public static final double MAX_PRICE = 999999.99;
+    public static final double MAX_PRICE = 9999990.99;
     public static final int MAX_STOCK = 1000000;
 
     // String Limits
