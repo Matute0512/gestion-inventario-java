@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import java.awt.Cursor;
+import javax.swing.SwingWorker;
+import java.util.concurrent.ExecutionException;
 import javax.swing.table.DefaultTableModel;
 import io.github.torres.dao.ProductDAO;
 import io.github.torres.dao.ProductDAO.DAOException;
@@ -120,17 +123,35 @@ public class ProductController {
      * Fetches all products from MySQL and updates the JTable view.
      */
     private void refreshTable() {
+        view.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        inventoryPanel.getBtnAdd().setEnabled(false);
 
-        try {
+        SwingWorker<List<Product>,Void> worker = new SwingWorker<List<Product>, Void>() {
+            @Override
+            // 1. THIS RUNS IN A BACKGROUND THREAD
+            protected List<Product> doInBackground(){
+                return productDAO.getAll();
+            }
 
-            List<Product> products = productDAO.getAll();
+            @Override
+            protected void done() {
+                try{
+                    List<Product> products = get();
 
-            renderTableData(products);
-            renderSalesCatalog(products);
-
-        } catch (DAOException ex) {
-            showError("No se pudo cargar la lista de productos.\n" + ex.getMessage());
-        }
+                    renderTableData(products);
+                    renderSalesCatalog(products);
+                    logger.info("Productos cargados exitosamente. Total: {}", products.size());
+                } catch (InterruptedException | ExecutionException e) {
+                    logger.error("Error al cargar productos en background.", e);
+                    showError("No se pudo cargar la lista de productos.\n" + e.getMessage());
+                } finally{
+                    // We restore the UI state regardless of whether there was an error or success
+                    view.setCursor(Cursor.getDefaultCursor());
+                    inventoryPanel.getBtnAdd().setEnabled(true);
+                }
+            }
+        };
+        worker.execute();
     }
 
     /**
@@ -142,7 +163,7 @@ public class ProductController {
             refreshTable();
             return;
         }
-
+        view
         try {
             List<Product> results = productDAO.search(keyWord);
             renderTableData(results);
@@ -491,4 +512,6 @@ public class ProductController {
             showError("Error al procesar la compra.\n" + ex.getMessage());
         }
     }
+
+
 }
