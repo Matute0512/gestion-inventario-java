@@ -163,7 +163,6 @@ public class ProductController {
             refreshTable();
             return;
         }
-        view
         try {
             List<Product> results = productDAO.search(keyWord);
             renderTableData(results);
